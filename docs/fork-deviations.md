@@ -89,3 +89,36 @@ If upstream changes `google_health_wellness_context` or the summary aggregation,
 preserve the contract that every accepted `days` value controls the lookback.
 Reconcile the internal minimum-days behavior and keep the average semantics and
 `lookback_days` field aligned with any upstream wellness-context contract.
+
+## Production OCI packaging
+
+### Upstream behavior
+
+The upstream repository does not currently provide a production OCI image
+definition, a container build-context policy, or a tracked deployment
+environment example.
+
+### Fork behavior and reasoning
+
+This fork adds a multi-stage `Containerfile` based on the Node 22 glibc image.
+The build stage runs `npm ci` and `npm run build`, then removes development
+dependencies before the runtime stage copies only `dist`, package metadata, and
+production dependencies. The runtime defaults to the existing HTTP transport
+on `0.0.0.0:3000`, structured privacy, the approved full read-only scopes,
+disabled persistent SQLite caching, and the default in-memory HTTP cache.
+
+The runtime uses the image's non-root `node` user. OAuth tokens are expected at
+`/home/node/.google-health-mcp/tokens.json`, which must be supplied through a
+runtime-mounted home directory or volume; no credentials, token files, local
+configuration, or health data are copied into the image. `.dockerignore`
+excludes those files from the build context, and `.env.example` documents safe
+runtime placeholders plus the opt-in Cloudflare Access variables.
+
+### Merge guidance
+
+If upstream adds equivalent container packaging, compare the build inputs,
+Node base image, non-root behavior, health check, environment defaults, and
+secret/state exclusions before removing this fork artifact. Keep the token
+path mounted rather than copied into an image, preserve the approved read-only
+scope and cache defaults, and never replace placeholders in `.env.example`
+with real credentials.
