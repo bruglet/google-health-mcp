@@ -103,6 +103,37 @@ avoidance guidance. Prefer upstream text when it is equally operational, and
 remove this deviation once upstream covers the same decision points without
 changing behavior.
 
+## Upstream synchronization procedure
+
+Keep the remotes pointed at the two intended repositories:
+
+```text
+upstream = https://github.com/davidmosiah/google-health-mcp.git
+origin   = https://github.com/bruglet/google-health-mcp.git
+```
+
+From the fork checkout, use this review-first update flow:
+
+```bash
+git fetch upstream
+git diff HEAD..upstream/main
+git merge upstream/main
+npm ci
+npm test
+git diff upstream/main...HEAD
+git status
+git push origin integration/home-server
+```
+
+Review upstream changes before and after the merge. For every file listed in
+the final three-dot diff, check the relevant section above and remove a fork
+customization when upstream now provides equivalent behavior. Resolve conflicts
+by preserving the approved privacy, scope, cache, OAuth, and Cloudflare
+boundaries; do not silently retain fork code just because it existed before.
+Only push after the test suite passes and the final diff is understood. The
+GitHub Actions workflow then remains the source of truth for rebuilding and
+publishing the container image.
+
 ## GitHub Actions GHCR container publication
 
 ### Upstream behavior
