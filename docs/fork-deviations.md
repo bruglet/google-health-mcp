@@ -134,6 +134,29 @@ Only push after the test suite passes and the final diff is understood. The
 GitHub Actions workflow then remains the source of truth for rebuilding and
 publishing the container image.
 
+## Environment-aware smoke-test status check
+
+### Upstream behavior
+
+The upstream stdio smoke test expects `google_health_connection_status` to be
+disconnected and asserts that `GOOGLE_HEALTH_CLIENT_ID` is missing. That is
+useful in a pristine checkout but fails on a developer or home-server checkout
+that intentionally has working local OAuth state.
+
+### Fork behavior and reasoning
+
+This fork checks that the status response has a boolean `ok` value and preserves
+the requested client identity, while allowing either connected or disconnected
+local state. It does not weaken the tool's runtime authentication checks; it
+only prevents a local credential from making the repository's smoke test fail.
+
+### Merge guidance
+
+If upstream makes the smoke test environment-aware, prefer its implementation
+and remove this local change. Otherwise retain the contract-level assertion so
+`npm test` remains runnable on both pristine CI workers and the configured
+home-server checkout.
+
 ## GitHub Actions GHCR container publication
 
 ### Upstream behavior
