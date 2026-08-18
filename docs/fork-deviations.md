@@ -62,6 +62,47 @@ Future container and Quadlet artifacts for this deployment should enable the
 guard explicitly and provide the team domain and audience through deployment
 configuration, never by committing those values as secrets or embedding JWTs.
 
+## GitHub Actions GHCR container publication
+
+### Upstream behavior
+
+The upstream repository has application CI but no workflow that builds and
+publishes the production `Containerfile` to an OCI registry.
+
+### Fork behavior and reasoning
+
+This fork adds `.github/workflows/container-publish.yml` for the home-server
+deployment. It uses the GitHub Container Registry image name derived from the
+actual fork (`ghcr.io/<owner>/<repository>`) and authenticates only with the
+workflow-provided `GITHUB_TOKEN`:
+
+- `contents: read` and `packages: write` are the only workflow permissions.
+- No Google Health, Google OAuth, or Cloudflare credentials are exposed to the
+  build; the image has no runtime health credentials baked into it.
+- The workflow runs manually, for relevant container/source changes on
+  `main` or `integration/**`, and for semver tags such as `v0.7.6`.
+- It publishes branch tags, `sha-<short-commit>` tags, semver tags, and
+  `latest` for the default branch or semver releases. A major `0` tag is not
+  published while the project remains in the `0.x` series.
+- The build uses the same `Containerfile` as local deployment and targets the
+  confirmed home-server architecture, `linux/amd64`; multi-architecture
+  emulation is intentionally not added.
+- Docker metadata labels link the image back to the fork, source revision, and
+  published version.
+
+The GHCR package's initial visibility and repository access settings remain
+GitHub-side configuration; they are not represented by committed credentials
+or deployment files.
+
+### Merge guidance
+
+If upstream adds a container workflow, compare its registry, trigger filters,
+permissions, tag policy, target platforms, and metadata before merging. Keep
+the build pointed at the fork's production `Containerfile`, retain the
+minimal `GITHUB_TOKEN` permissions, and do not add Google or Cloudflare
+secrets to the workflow. Revisit the architecture decision before adding
+multi-architecture publishing.
+
 ## Days-aware wellness context window
 
 ### Upstream behavior
