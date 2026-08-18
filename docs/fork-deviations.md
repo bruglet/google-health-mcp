@@ -73,6 +73,36 @@ Future container and Quadlet artifacts for this deployment should enable the
 guard explicitly and provide the team domain and audience through deployment
 configuration, never by committing those values as secrets or embedding JWTs.
 
+## Model-oriented MCP tool descriptions
+
+### Upstream behavior
+
+The upstream tool catalog mixes operational descriptions with short API-style
+summaries. Several neighboring tools do not tell a model when to choose one
+over another, which prerequisite tool supplies an input, or how pagination,
+date boundaries, privacy escalation, and source metadata affect interpretation.
+
+### Fork behavior and reasoning
+
+This fork revises only MCP tool and input descriptions so models can select and
+chain the existing tools more reliably. Descriptions now emphasize user-request
+intent, prerequisite calls, neighboring-tool distinctions, required formats,
+continuation-token handling, and material limitations such as exclusive end
+dates and the absence of per-point provenance in reconciled or aggregate
+responses. They also distinguish Google Health account data from the separate
+local Delx Wellness profile and make explicit-intent boundaries operational.
+
+No tool names, schemas, endpoints, response payloads, privacy behavior, OAuth
+scopes, cache behavior, or authorization gates are changed by this deviation.
+
+### Merge guidance
+
+If upstream improves tool metadata, compare descriptions tool by tool and keep
+the version that gives models the clearest selection, sequencing, and misuse
+avoidance guidance. Prefer upstream text when it is equally operational, and
+remove this deviation once upstream covers the same decision points without
+changing behavior.
+
 ## GitHub Actions GHCR container publication
 
 ### Upstream behavior
