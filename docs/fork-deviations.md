@@ -47,6 +47,17 @@ key rotation is handled in memory without adding persistent key material to
 the connector. The validation flow follows
 [Cloudflare's origin JWT validation guidance](https://developers.cloudflare.com/cloudflare-one/access-controls/applications/http-apps/authorization-cookie/validating-json/).
 
+### Current home-server deployment
+
+The home-server deployment now publishes the MCP endpoint at
+`https://google-health-mcp.ismind.org/mcp` through the existing Cloudflare
+Tunnel. Cloudflare Managed OAuth supplies the client-facing authorization
+code/PKCE flow, while the container-side guard validates the resulting Access
+assertion before serving MCP requests. The Access team domain and application
+AUD remain only in the server's mode-0600 runtime environment file; neither
+value is committed here. The public hostname is protected by Access, while
+the origin continues to bind only to host loopback at `127.0.0.1:3101`.
+
 ### Merge guidance
 
 The implementation is intentionally isolated in
@@ -183,9 +194,9 @@ The server's existing `cloudflared` container uses host networking, so the MCP
 origin binds only to host loopback at `127.0.0.1:3101` and maps to the
 container's port 3000. Port 3000 is already used by another service. This
 keeps the origin off external interfaces while leaving Cloudflare Tunnel able
-to reach it locally. `/health` remains internal and unauthenticated; the
-Cloudflare Access origin guard remains disabled until its own deployment
-milestone is configured.
+to reach it locally. `/health` remains unauthenticated at the origin, while the
+public hostname is protected by Cloudflare Access. The Cloudflare Access
+origin guard is enabled in the current home-server runtime.
 
 OAuth `config.json` and `tokens.json` are runtime state under
 `~/settings/google-health-mcp`, mounted at the image's expected
