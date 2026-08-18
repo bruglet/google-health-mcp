@@ -38,8 +38,13 @@ shared local Delx Wellness profile, not Google Health.
 
 - **stdio (default):** access is inherited from the local OS user and MCP host.
 - **HTTP:** binds to `127.0.0.1` by default for local development. It does not
-  provide Bearer-token authentication for remote callers. Do not bind it to a
-  public or shared interface without an authenticated gateway and an explicit
+  provide Bearer-token authentication for remote callers unless the optional
+  Cloudflare Access deployment guard is enabled. With
+  `GOOGLE_HEALTH_MCP_CLOUDFLARE_ACCESS_REQUIRED=true`, the `/mcp` route
+  validates the `Cf-Access-Jwt-Assertion` signature, issuer, and audience
+  against the configured Cloudflare Access team domain. `/health` remains an
+  internal, unauthenticated liveness endpoint. Do not bind HTTP to a public or
+  shared interface without an authenticated gateway and an explicit
   authorization policy.
 
 For stronger isolation today, run separate instances under separate OS users
