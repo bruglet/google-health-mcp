@@ -505,7 +505,7 @@ export function registerGoogleHealthTools(server: McpServer): void {
 
   server.registerTool("google_health_wellness_context", {
     title: "Google Health Wellness Context",
-    description: "Normalize Google Health activity/sleep context into the shared wellness_context shape for recommendation engines.",
+    description: "Normalize Google Health activity/sleep context over the requested lookback window into the shared wellness_context shape for recommendation engines.",
     inputSchema: WellnessContextInputSchema.shape,
     outputSchema: WellnessContextOutputSchema.shape,
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }

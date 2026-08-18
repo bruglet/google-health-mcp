@@ -267,7 +267,9 @@ export async function buildDailySummary(client: Pick<GoogleHealthClient, "dailyR
 }
 
 export async function buildWeeklySummary(client: Pick<GoogleHealthClient, "dailyRollup" | "reconcileDataPoints">, options: WeeklySummaryOptions) {
-  const days = Math.max(options.days, 7);
+  // The public weekly-summary schema requires at least 7 days. Wellness context
+  // reuses this aggregation for its valid 1-30 day lookback window.
+  const days = Math.max(options.days, 1);
   const current = (await Promise.all(Array.from({ length: days }, (_, index) => dailyBundle(client, dateString(index)))))
     .map(dailyStats)
     .reverse();

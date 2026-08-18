@@ -33,6 +33,10 @@ Full tool catalog for [`google-health-mcp-unofficial`](https://www.npmjs.com/pac
 - `google_health_revoke_access`
 - `google_health_wellness_context`
 
+`google_health_wellness_context` accepts a 1–30 day `days` lookback and returns
+average sleep/activity context for that window, along with the requested
+soreness and injury flags.
+
 ## Data type notes
 
 Endpoint paths use kebab case:

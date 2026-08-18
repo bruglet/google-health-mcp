@@ -3,23 +3,43 @@ import { buildDailySummary, buildWeeklySummary } from '../dist/services/summary.
 import { buildWellnessContext } from '../dist/services/context.js';
 
 const reconcileCalls = [];
+const requestLog = [];
+let contextFixture = false;
+const contextDateIndex = new Map();
+
+function fixtureIndex(query) {
+  const source = `${query.startDate ?? ''} ${query.filter ?? ''}`;
+  const date = source.match(/\d{4}-\d{2}-\d{2}/)?.[0] ?? 'unknown';
+  if (!contextDateIndex.has(date)) contextDateIndex.set(date, contextDateIndex.size);
+  return contextDateIndex.get(date) ?? 0;
+}
+
 const fakeClient = {
-  async dailyRollup({ dataType }) {
+  async dailyRollup(query) {
+    requestLog.push({ kind: 'dailyRollup', query });
+    const { dataType } = query;
+    const index = contextFixture ? fixtureIndex(query) : 0;
     if (dataType === 'steps') return { rollupDataPoints: [{ steps: { countSum: '9000' } }] };
     if (dataType === 'distance') return { rollupDataPoints: [{ distance: { metersSum: '7200' } }] };
     if (dataType === 'total-calories') return { rollupDataPoints: [{ totalCalories: { kcalSum: 2400 } }] };
-    if (dataType === 'active-zone-minutes') return { rollupDataPoints: [{ activeZoneMinutes: { sumInFatBurnHeartZone: '20', sumInCardioHeartZone: '25', sumInPeakHeartZone: '15' } }] };
+    if (dataType === 'active-zone-minutes') {
+      const activeMinutes = contextFixture ? [10, 60, 120][Math.min(index, 2)] : 60;
+      return { rollupDataPoints: [{ activeZoneMinutes: { sumInFatBurnHeartZone: activeMinutes, sumInCardioHeartZone: 0, sumInPeakHeartZone: 0 } }] };
+    }
     if (dataType === 'weight') return { rollupDataPoints: [{ weight: { weightGramsAvg: 80000 } }] };
     throw new Error(`unexpected rollup ${dataType}`);
   },
   async reconcileDataPoints(query) {
+    requestLog.push({ kind: 'reconcileDataPoints', query });
     reconcileCalls.push(query);
     const { dataType } = query;
+    const index = contextFixture ? fixtureIndex(query) : 0;
     if (dataType === 'daily-resting-heart-rate') {
       return { dataPoints: [{ dailyRestingHeartRate: { beatsPerMinute: 58 } }] };
     }
     if (dataType === 'sleep') {
-      return { dataPoints: [{ sleep: { summary: { minutesAsleep: '430' } } }] };
+      const minutesAsleep = contextFixture ? [360, 420, 480][Math.min(index, 2)] : 430;
+      return { dataPoints: [{ sleep: { summary: { minutesAsleep } } }] };
     }
     if (dataType === 'daily-heart-rate-variability') {
       return { dataPoints: [{ dailyHeartRateVariability: { rmssd: 48.2 } }] };
@@ -55,10 +75,16 @@ assert.equal(weekly.scorecard.current.days, 7);
 assert.equal(weekly.scorecard.current.avg_sleep_hours, 7.17);
 assert.ok(weekly.diagnostic.bottlenecks.length >= 1);
 
-const context = await buildWellnessContext(fakeClient, { days: 7, timezone: 'UTC' });
+const requestCountBeforeContext = requestLog.length;
+contextFixture = true;
+const context = await buildWellnessContext(fakeClient, { days: 3, timezone: 'UTC' });
+contextFixture = false;
 assert.equal(context.source, 'google_health');
-assert.equal(context.sleep_hours, 7.17);
+assert.equal(context.lookback_days, 3);
+assert.equal(context.sleep_hours, 7);
 assert.equal(context.recent_training_load, 'normal');
+assert.equal(context.data_quality.days_with_sleep, 3);
+assert.equal(requestLog.length - requestCountBeforeContext, 24);
 
 let capturedStderr = '';
 const originalStderrWrite = process.stderr.write.bind(process.stderr);
