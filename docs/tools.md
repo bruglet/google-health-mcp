@@ -75,6 +75,23 @@ users/me/dataSourceFamilies/google-wearables
 users/me/dataSourceFamilies/google-sources
 ```
 
+## Source metadata and aggregation
+
+Use `google_health_list_data_points` when individual source or provenance
+metadata matters. It returns ordinary Google `DataPoint` resources, and
+structured mode retains non-sensitive `dataSource` fields such as platform,
+recording method, and device/application metadata.
+
+`google_health_reconcile_data_points` returns Google `ReconciledDataPoint`
+resources, while daily and physical rollups return aggregate resources. Those
+response shapes may not contain a per-point `dataSource`; missing source
+metadata there is an API response-shape limitation, not evidence that
+structured privacy removed it. Use the list endpoint, optionally with a source
+family filter, when source metadata is required. See the official
+[DataPoint resource](https://developers.google.com/health/reference/rest/v4/users.dataTypes.dataPoints)
+and [reconcile method](https://developers.google.com/health/reference/rest/v4/users.dataTypes.dataPoints/reconcile)
+references for the distinction.
+
 ## Coverage validation
 
 The connector's `google_health_list_data_types` tool is the canonical local
