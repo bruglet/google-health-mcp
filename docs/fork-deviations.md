@@ -92,8 +92,10 @@ dates and the absence of per-point provenance in reconciled or aggregate
 responses. They also distinguish Google Health account data from the separate
 local Delx Wellness profile and make explicit-intent boundaries operational.
 
-No tool names, schemas, endpoints, response payloads, privacy behavior, OAuth
-scopes, cache behavior, or authorization gates are changed by this deviation.
+No tool names, schema validation rules, response payload shapes, endpoints,
+privacy behavior, OAuth scopes, cache behavior, or authorization gates are
+changed by this deviation. Tool and input descriptions are intentionally
+updated as schema metadata.
 
 ### Merge guidance
 
@@ -115,6 +117,7 @@ origin   = https://github.com/bruglet/google-health-mcp.git
 From the fork checkout, use this review-first update flow:
 
 ```bash
+git switch integration/home-server
 git fetch upstream
 git diff HEAD..upstream/main
 git merge upstream/main
@@ -123,6 +126,11 @@ npm test
 git diff upstream/main...HEAD
 git status
 git push origin integration/home-server
+git switch main
+git fetch origin main
+git merge --ff-only integration/home-server
+git push origin main
+git switch integration/home-server
 ```
 
 Review upstream changes before and after the merge. For every file listed in
@@ -131,8 +139,10 @@ customization when upstream now provides equivalent behavior. Resolve conflicts
 by preserving the approved privacy, scope, cache, OAuth, and Cloudflare
 boundaries; do not silently retain fork code just because it existed before.
 Only push after the test suite passes and the final diff is understood. The
-GitHub Actions workflow then remains the source of truth for rebuilding and
-publishing the container image.
+Publish the tested integration tip to `main` with the fast-forward steps above;
+if `main` is protected, use a pull request instead and verify that it lands at
+the same tested commit. The GitHub Actions workflow then remains the source of
+truth for rebuilding and publishing the container image.
 
 ## Environment-aware smoke-test status check
 
