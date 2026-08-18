@@ -61,3 +61,31 @@ decision changes.
 Future container and Quadlet artifacts for this deployment should enable the
 guard explicitly and provide the team domain and audience through deployment
 configuration, never by committing those values as secrets or embedding JWTs.
+
+## Days-aware wellness context window
+
+### Upstream behavior
+
+The upstream `google_health_wellness_context` tool accepted a `days` input but
+built its result from a single daily summary. A request such as `days: 14`
+therefore returned today's context rather than a 14-day lookback.
+
+### Fork behavior and reasoning
+
+This fork reuses the existing summary aggregation for the requested 1–30 day
+window. `sleep_hours` and the activity-based `recent_training_load` represent
+the window average, and the response includes `lookback_days` so downstream
+agents can see which period was summarized. The public weekly-summary tool
+still requires at least 7 days; shorter windows are supported only for the
+wellness-context reuse path.
+
+The change fixes a misleading accepted parameter without adding a new MCP
+tool. It intentionally uses the existing daily summary primitives so privacy,
+filter, and data-quality behavior remain shared with the rest of the connector.
+
+### Merge guidance
+
+If upstream changes `google_health_wellness_context` or the summary aggregation,
+preserve the contract that every accepted `days` value controls the lookback.
+Reconcile the internal minimum-days behavior and keep the average semantics and
+`lookback_days` field aligned with any upstream wellness-context contract.
