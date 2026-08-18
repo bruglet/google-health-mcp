@@ -9,6 +9,7 @@ import { runCliCommand } from "./cli/commands.js";
 import { registerGoogleHealthPrompts } from "./prompts/google-health-prompts.js";
 import { registerGoogleHealthResources } from "./resources/google-health-resources.js";
 import { installClientSafeToolSchemas } from "./services/client-safe-json-schema.js";
+import { createCloudflareAccessGuard, getCloudflareAccessConfig } from "./services/cloudflare-access.js";
 import { registerGoogleHealthTools } from "./tools/google-health-tools.js";
 
 function createServer(): McpServer {
@@ -35,6 +36,7 @@ async function runHttp(): Promise<void> {
   const host = process.env.GOOGLE_HEALTH_MCP_HOST ?? "127.0.0.1";
   const port = Number(process.env.GOOGLE_HEALTH_MCP_PORT ?? 3000);
   const allowedOrigin = process.env.GOOGLE_HEALTH_MCP_ALLOWED_ORIGIN ?? `http://${host}:${port}`;
+  const cloudflareAccessGuard = createCloudflareAccessGuard(getCloudflareAccessConfig());
 
   app.use(express.json({ limit: "1mb" }));
   app.use(cors({ origin: allowedOrigin }));
@@ -43,7 +45,7 @@ async function runHttp(): Promise<void> {
     res.json({ ok: true, name: SERVER_NAME, version: SERVER_VERSION });
   });
 
-  app.post("/mcp", async (req, res) => {
+  app.post("/mcp", cloudflareAccessGuard, async (req, res) => {
     const server = createServer();
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: undefined,
