@@ -1,0 +1,31 @@
+[Unit]
+Description=Google Health MCP (rootless Podman)
+Wants=network-online.target
+After=network-online.target
+
+[Container]
+# This is the branch tag published by the fork's GitHub Actions workflow.
+# Replace it with an immutable sha-* tag when pinning a one-off deployment.
+Image=ghcr.io/bruglet/google-health-mcp:integration-home-server
+ContainerName=google-health-mcp
+AutoUpdate=registry
+# Preserve the host user's UID for the 0600 config/token files while the
+# image continues to run as its non-root node user.
+UserNS=keep-id
+
+# The host's cloudflared container uses host networking, so it can reach this
+# loopback-only origin. Host port 3101 is unused on mercury; container port
+# 3000 is the port configured by the production Containerfile.
+PublishPort=127.0.0.1:3101:3000
+
+# Keep the environment file and OAuth state on the host. Do not put client
+# secrets or tokens in this repository or in the image.
+EnvironmentFile=%h/settings/google-health-mcp/google-health-mcp.env
+Volume=%h/settings/google-health-mcp:/home/node/.google-health-mcp:Z
+
+[Service]
+Restart=always
+TimeoutStopSec=120
+
+[Install]
+WantedBy=default.target

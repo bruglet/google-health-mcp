@@ -163,3 +163,44 @@ secret/state exclusions before removing this fork artifact. Keep the token
 path mounted rather than copied into an image, preserve the approved read-only
 scope and cache defaults, and never replace placeholders in `.env.example`
 with real credentials.
+
+## Rootless Podman Quadlet deployment example
+
+### Upstream behavior
+
+The upstream repository does not currently provide a tracked rootless Podman
+Quadlet deployment for a home server.
+
+### Fork behavior and reasoning
+
+This fork adds `deploy/quadlet/google-health-mcp.container` and its companion
+environment example for the `host` user's Fedora IoT/Podman 5.8.4 setup. The
+unit consumes the GHCR image published by this fork, uses the existing user
+Quadlet search path, restarts on failure, and is pulled into the lingering
+user manager's `default.target` for startup after reboot.
+
+The server's existing `cloudflared` container uses host networking, so the MCP
+origin binds only to host loopback at `127.0.0.1:3101` and maps to the
+container's port 3000. Port 3000 is already used by another service. This
+keeps the origin off external interfaces while leaving Cloudflare Tunnel able
+to reach it locally. `/health` remains internal and unauthenticated; the
+Cloudflare Access origin guard remains disabled until its own deployment
+milestone is configured.
+
+OAuth `config.json` and `tokens.json` are runtime state under
+`~/settings/google-health-mcp`, mounted at the image's expected
+`/home/node/.google-health-mcp` path with user-only permissions. The Quadlet
+uses `UserNS=keep-id` so the host user's 0600 files remain readable by the
+image's non-root `node` user without changing their host ownership. They are
+not tracked, copied into the image, or represented by the example environment
+file. No SQLite volume is created because persistent SQLite caching is
+disabled; the default in-memory HTTP cache remains available.
+
+### Merge guidance
+
+If upstream adds a Quadlet or another deployment definition, compare the image
+reference, user/rootless scope, host-network exposure, state mount, restart and
+startup behavior, and secret exclusions before replacing this example. Keep
+the origin loopback-only unless the upstream or Cloudflare deployment provides
+an equivalent authenticated boundary, and preserve the approved privacy,
+scope, and cache defaults.
