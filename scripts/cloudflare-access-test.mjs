@@ -129,7 +129,9 @@ try {
   const serviceToken = await createToken({
     claims: { sub: '', common_name: 'service-token.access' },
   });
-  const tampered = `${valid.slice(0, -1)}${valid.endsWith('a') ? 'b' : 'a'}`;
+  const [header, payload, signature] = valid.split('.');
+  const tamperedSignature = `${signature.startsWith('a') ? 'b' : 'a'}${signature.slice(1)}`;
+  const tampered = `${header}.${payload}.${tamperedSignature}`;
 
   for (const token of [expired, wrongIssuer, wrongAudience, tampered]) {
     assert.deepEqual(await request('/mcp', { method: 'POST', token }), {
