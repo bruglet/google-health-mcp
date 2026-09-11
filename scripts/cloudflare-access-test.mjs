@@ -67,8 +67,13 @@ const jwks = createLocalJWKSet({
   keys: [{ ...publicJwk, alg: 'RS256', kid: keyId, use: 'sig' }],
 });
 
-async function createToken({ issuer = teamDomain, tokenAudience = audience, expiration = '2h' } = {}) {
-  return new SignJWT({ sub: 'test-user' })
+async function createToken({
+  issuer = teamDomain,
+  tokenAudience = audience,
+  expiration = '2h',
+  claims = { sub: 'test-user' },
+} = {}) {
+  return new SignJWT(claims)
     .setProtectedHeader({ alg: 'RS256', kid: keyId })
     .setIssuer(issuer)
     .setAudience(tokenAudience)
@@ -121,6 +126,9 @@ try {
   const wrongIssuer = await createToken({ issuer: 'https://other.example.cloudflareaccess.com' });
   const wrongAudience = await createToken({ tokenAudience: 'other-access-audience' });
   const valid = await createToken();
+  const serviceToken = await createToken({
+    claims: { sub: '', common_name: 'service-token.access' },
+  });
   const tampered = `${valid.slice(0, -1)}${valid.endsWith('a') ? 'b' : 'a'}`;
 
   for (const token of [expired, wrongIssuer, wrongAudience, tampered]) {
@@ -131,6 +139,10 @@ try {
   }
 
   assert.deepEqual(await request('/mcp', { method: 'POST', token: valid }), {
+    status: 200,
+    body: { ok: true },
+  });
+  assert.deepEqual(await request('/mcp', { method: 'POST', token: serviceToken }), {
     status: 200,
     body: { ok: true },
   });
