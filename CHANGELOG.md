@@ -1,3 +1,33 @@
+## 0.8.0 - 2026-11-02
+
+### Security and compatibility
+
+- Release the merged input, profile-storage and local-only HTTP hardening. Unsafe remote HTTP bindings, invalid/oversized profile values, profile symlinks, compressed requests and excessive tool arguments are rejected.
+- Authenticated responses are not served from the legacy cross-account cache. Existing cache files are not automatically removed.
+- This pre-1.0 minor release includes compatibility restrictions; see [the migration guide](docs/migration-0.8.0.md).
+- Align package, server and runtime release metadata; expand the existing CI matrix to Node.js 20/22/24 without changing permissions.
+
+### Previously unreleased changes
+
+### Previously unreleased changes
+
+- Update vulnerable dependencies and explicitly bound tool arguments to 10,000 elements.
+- Reject compressed HTTP request bodies; add synthetic stdio/HTTP input-limit regressions.
+
+### Fixed
+
+- `daily_summary`, `weekly_summary` and `wellness_context` resolve "today" (and, for `weekly_summary`, the trailing day windows) in the caller's `timezone` instead of UTC. A New York user asking in the evening no longer gets the next, still-empty UTC day.
+- Without `timezone`, these tools, `daily_rollup` and the summary resources use the wellness profile's timezone, then UTC.
+- `daily_rollup` accepts an optional `timezone` used when `start_date` or `end_date` is `today`.
+- An invalid IANA `timezone` is rejected at input validation with an actionable error, also when the date is explicit.
+- `weekly_summary` reports its resolved `window.start_date` and `window.end_date` (inclusive).
+- An empty date string is rejected again instead of silently meaning today.
+- `wellness_context` documents that `days` is currently unused (the context comes from today's summary).
+
+### Security
+
+- Raise transitive npm overrides so Dependabot grouped security updates can resolve: `qs@6.16.0`, `hono@4.13.7`, `fast-uri@3.1.8`, `ip-address@10.7.1`. Stale pins (`qs@6.15.2`, `hono@4.13.1`, `fast-uri@3.1.5`, `ip-address@10.4.0`) made the npm security job fail with `security_update_not_possible` from 2026-09-08.
+
 ## 0.7.8 - 2026-08-29
 
 Skill layer ships in-package (`skill/SKILL.md`). Agents can use MCP tools **or** `call <tool> --json` on the same binary; mutation gates stay identical.
@@ -9,7 +39,7 @@ Skill layer ships in-package (`skill/SKILL.md`). Agents can use MCP tools **or**
 - OAuth authorization now uses PKCE S256 and 128-bit state (was 32-bit).
 - Local OAuth token files are gitignored so they cannot be committed.
 
-## Unreleased (OSS-100)
+### Previously unreleased changes
 
 ### Added
 - Coverage report template + issue form; headless auth walkthrough; clinical/dense policies; first-call FAQ.

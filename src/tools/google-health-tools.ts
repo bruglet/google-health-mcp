@@ -48,6 +48,7 @@ import {
   getProfile,
   getProfilePath,
   missingCriticalFields,
+  profileTimezone,
   updateProfile,
   type WellnessProfileDocument
 } from "../services/profile-store.js";
@@ -362,6 +363,7 @@ export function registerGoogleHealthTools(server: McpServer): void {
         dataType: params.data_type,
         startDate: params.start_date,
         endDate: params.end_date,
+        timezone: params.timezone ?? await profileTimezone(),
         windowSizeDays: params.window_size_days,
         pageSize: params.page_size,
         pageToken: params.page_token,
@@ -422,7 +424,7 @@ export function registerGoogleHealthTools(server: McpServer): void {
 
   server.registerTool("google_health_cache_status", {
     title: "Google Health Cache Status",
-    description: "Use this when the user asks whether caching is enabled or wants cache entry and in-memory HTTP hit/miss statistics. It reports local cache state only and does not read Google Health data; use google_health_privacy_audit for the broader privacy and storage posture.",
+    description: "Use this when the user asks about caching. Reports disabled authenticated payload caching, retained configuration and in-memory HTTP statistics. Existing SQLite entries are preserved and not inspected; use google_health_privacy_audit for the broader privacy and storage posture.",
     inputSchema: ResponseOnlyInputSchema.shape,
     outputSchema: CacheStatusOutputSchema.shape,
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false }

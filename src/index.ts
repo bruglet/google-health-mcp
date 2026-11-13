@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { localHttpHost, formatLocalHttpOrigin } from "./services/local-http-host.js";
 import cors from "cors";
 import express from "express";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
@@ -16,7 +17,7 @@ function createServer(): McpServer {
   const server = new McpServer({
     name: SERVER_NAME,
     version: SERVER_VERSION
-  });
+  }, { maxToolInputElements: 10_000 });
 
   registerGoogleHealthTools(server);
   registerGoogleHealthResources(server);
@@ -33,12 +34,15 @@ async function runStdio(): Promise<void> {
 
 async function runHttp(): Promise<void> {
   const app = express();
-  const host = process.env.GOOGLE_HEALTH_MCP_HOST ?? "127.0.0.1";
+  const configuredHost = process.env.GOOGLE_HEALTH_MCP_HOST ?? "127.0.0.1";
+  const cloudflareAccessConfig = getCloudflareAccessConfig();
+  const host = cloudflareAccessConfig.required ? configuredHost : localHttpHost(configuredHost);
+  const originHost = configuredHost.toLowerCase() === "localhost" ? "localhost" : host;
   const port = Number(process.env.GOOGLE_HEALTH_MCP_PORT ?? 3000);
-  const allowedOrigin = process.env.GOOGLE_HEALTH_MCP_ALLOWED_ORIGIN ?? `http://${host}:${port}`;
-  const cloudflareAccessGuard = createCloudflareAccessGuard(getCloudflareAccessConfig());
+  const allowedOrigin = process.env.GOOGLE_HEALTH_MCP_ALLOWED_ORIGIN ?? formatLocalHttpOrigin(originHost, port);
+  const cloudflareAccessGuard = createCloudflareAccessGuard(cloudflareAccessConfig);
 
-  app.use(express.json({ limit: "1mb" }));
+  app.use(express.json({ limit: "1mb", inflate: false }));
   app.use(cors({ origin: allowedOrigin }));
 
   app.get("/health", (_req, res) => {
@@ -69,7 +73,7 @@ async function runHttp(): Promise<void> {
   });
 
   app.listen(port, host, () => {
-    console.error(`${SERVER_NAME} HTTP transport listening on http://${host}:${port}/mcp`);
+    console.error(`${SERVER_NAME} HTTP transport listening on ${formatLocalHttpOrigin(host, port)}/mcp`);
   });
 }
 
